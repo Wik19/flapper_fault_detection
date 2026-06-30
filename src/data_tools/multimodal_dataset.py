@@ -1,20 +1,10 @@
-import os
-import glob
 import wave
 import pandas as pd
 import numpy as np
 import torch
-import random
 from torch.utils.data import Dataset
 
-def get_class_label(filename):
-    """Maps filenames to exact integer classes."""
-    if "Healthy" in filename: return 0
-    elif "tear_n_hole2" in filename: return 3
-    elif "hole1" in filename: return 1
-    elif "hole2" in filename: return 2
-    elif "fixed_all_tape" in filename: return 4
-    else: raise ValueError(f"Could not map {filename}.")
+from data_tools.splitting import build_chunk_index, get_class_label
 
 class RawMultimodalDataset(Dataset):
     def __init__(self, data_dir, is_train=True, audio_sr=16000, imu_sr=416, 
@@ -36,51 +26,23 @@ class RawMultimodalDataset(Dataset):
         self.chunk_index = self._build_index()
 
     def _build_index(self):
-        index = []
-        mic_dir = os.path.join(self.data_dir, "MIC")
-        imu_dir = os.path.join(self.data_dir, "IMU")
-        
-        audio_files = glob.glob(os.path.join(mic_dir, "*.wav"))
-        
-        for audio_path in audio_files:
-            base_name = os.path.splitext(os.path.basename(audio_path))[0]
-            csv_path = os.path.join(imu_dir, f"{base_name}.csv")
-            
-            if not os.path.exists(csv_path): continue
-                
-            with wave.open(audio_path, 'rb') as wav_file:
-                num_audio_frames = wav_file.getnframes()
-                
-            if num_audio_frames >= self.audio_samples_per_window:
-                total_chunks = ((num_audio_frames - self.audio_samples_per_window) // self.audio_hop_samples) + 1
-            else:
-                total_chunks = 0
-                
-            label = get_class_label(base_name)
-            
-            # --- STRATIFIED / RANDOM SPLIT LOGIC ---
-            all_chunks = list(range(total_chunks))
-            
-            random.seed(42) # Stop data leakage!
-            random.shuffle(all_chunks)
-            
-            split_point = int(total_chunks * self.split_ratio)
-            
-            if self.is_train:
-                valid_chunks = all_chunks[:split_point]
-            else:
-                valid_chunks = all_chunks[split_point:]
-            # ---------------------------------------
-            
-            for chunk_idx in valid_chunks:
-                index.append({
-                    "audio_path": audio_path,
-                    "csv_path": csv_path,
-                    "chunk_idx": chunk_idx,
-                    "label": label
-                })
-                
-        return index
+        # Group-aware, leakage-free split (see data_tools/splitting.py).
+        return build_chunk_index(
+            data_dir=self.data_dir,
+            is_train=self.is_train,
+            audio_samples_per_window=self.audio_samples_per_window,
+            audio_hop_samples=self.audio_hop_samples,
+            window_sec=self.window_sec,
+            hop_sec=self.hop_sec,
+            split_ratio=self.split_ratio,
+            verbose=self.is_train,
+        )
+
+    def label_counts(self, num_classes=5):
+        counts = [0] * num_classes
+        for record in self.chunk_index:
+            counts[record["label"]] += 1
+        return counts
 
     def __len__(self):
         return len(self.chunk_index)
@@ -117,12 +79,18 @@ class RawMultimodalDataset(Dataset):
         if imu_df.shape[1] > 6: imu_df = imu_df.iloc[:, -6:]
         imu_df = imu_df.fillna(0)
         
-        imu_tensor = torch.tensor(imu_df.values, dtype=torch.float32).T 
-        
+        imu_tensor = torch.tensor(imu_df.values, dtype=torch.float32).T
+
+        # Per-channel standardization: accel (~g) and gyro (deg/s) live on very
+        # different scales, so the raw 1D-CNN branch needs them normalized.
+        mean = imu_tensor.mean(dim=1, keepdim=True)
+        std = imu_tensor.std(dim=1, keepdim=True)
+        imu_tensor = (imu_tensor - mean) / (std + 1e-6)
+
         if imu_tensor.shape[1] < self.imu_samples_per_window:
             pad_amount = self.imu_samples_per_window - imu_tensor.shape[1]
             imu_tensor = torch.nn.functional.pad(imu_tensor, (0, pad_amount))
-            
+
         return imu_tensor
 
     def __getitem__(self, idx):

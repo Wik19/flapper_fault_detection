@@ -58,19 +58,29 @@ def get_dataloaders():
     
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=24)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=24)
-    
-    return train_loader, val_loader
+
+    return train_loader, val_loader, train_dataset
+
+
+def make_criterion(train_dataset):
+    # Inverse-frequency class weights so the imbalanced classes are not drowned
+    # out (e.g. hole1 has far more recordings than Healthy / fixed_all_tape).
+    counts = torch.tensor(train_dataset.label_counts(), dtype=torch.float32)
+    weights = counts.sum() / (len(counts) * counts.clamp(min=1))
+    weights[counts == 0] = 0.0
+    print(f"Class counts: {counts.tolist()} | weights: {[round(w, 3) for w in weights.tolist()]}")
+    return nn.CrossEntropyLoss(weight=weights.to(device))
 
 # ==========================================
 # 3. The Training Loop (with TQDM)
 # ==========================================
 def train():
-    train_loader, val_loader = get_dataloaders()
-    
+    train_loader, val_loader, train_dataset = get_dataloaders()
+
     # --- Pass window_sec to ensure dynamic flattening aligns with bash inputs ---
     model = LateFusionNet(num_classes=5, window_sec=WINDOW_SEC).to(device)
-    
-    criterion = nn.CrossEntropyLoss()
+
+    criterion = make_criterion(train_dataset)
     optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
     
     best_val_loss = float('inf')

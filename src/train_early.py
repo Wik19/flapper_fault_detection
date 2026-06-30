@@ -61,6 +61,15 @@ def get_dataloaders():
     
     return train_loader, val_loader, train_dataset
 
+def make_criterion(train_dataset):
+    # Inverse-frequency class weights so the imbalanced classes are not drowned
+    # out (e.g. hole1 has far more recordings than Healthy / fixed_all_tape).
+    counts = torch.tensor(train_dataset.label_counts(), dtype=torch.float32)
+    weights = counts.sum() / (len(counts) * counts.clamp(min=1))
+    weights[counts == 0] = 0.0
+    print(f"Class counts: {counts.tolist()} | weights: {[round(w, 3) for w in weights.tolist()]}")
+    return nn.CrossEntropyLoss(weight=weights.to(device))
+
 # ==========================================
 # 3. The Training Loop (Now with TQDM)
 # ==========================================
@@ -72,7 +81,7 @@ def train():
     print(f"⚙️ Auto-detected input shape: {dynamic_shape}")
     
     model = EarlyFusionCNN(input_shape=dynamic_shape, num_classes=5).to(device)
-    criterion = nn.CrossEntropyLoss()
+    criterion = make_criterion(train_dataset)
     optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
     
     best_val_loss = float('inf')

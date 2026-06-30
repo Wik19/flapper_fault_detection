@@ -83,9 +83,12 @@ os.makedirs(os.path.dirname(SAVE_FILE), exist_ok=True)
 print("Loading unseen validation dataset...")
 
 val_dataset = DatasetClass(
-    data_dir=DATA_DIR, 
-    is_train=False, 
-    imu_has_header=CSV_HAS_HEADER
+    data_dir=DATA_DIR,
+    is_train=False,
+    imu_has_header=CSV_HAS_HEADER,
+    window_sec=WINDOW_SEC,
+    hop_sec=HOP_SEC,
+    split_ratio=SPLIT_RATIO,
 )
 
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
@@ -94,7 +97,13 @@ print(f"Evaluating on {len(val_dataset)} unseen validation chunks.")
 # ==========================================
 # 4. Load Trained Model
 # ==========================================
-model = ModelClass(num_classes=5).to(device)
+# Build the model with the same geometry it was trained with, so the saved
+# weights line up with the configured window size.
+if MODE == "early":
+    sample_tensor, _ = val_dataset[0]
+    model = ModelClass(input_shape=sample_tensor.shape, num_classes=5).to(device)
+else:
+    model = ModelClass(num_classes=5, window_sec=WINDOW_SEC).to(device)
 
 if not os.path.exists(MODEL_PATH):
     print(f"🚨 Error: Could not find {MODEL_PATH}. Did you run the {MODE} training script?")
