@@ -135,9 +135,13 @@ class BinaryMultimodalDataset(Dataset):
 
     def __init__(self, records, is_train, audio_sr=16000, imu_sr=416,
                  window_sec=3.0, hop_sec=1.0, imu_has_header=False,
-                 n_fft=1024, hop_length=256, n_mels=64):
+                 n_fft=1024, hop_length=256, n_mels=64, augment=True):
         self.records = records
         self.is_train = is_train
+        # Augmentation only takes effect during training. Disable it to train on
+        # the raw (already imperfect) lab data with no synthetic gain/noise/shift/
+        # masking. RMS normalization + per-channel standardization still apply.
+        self.augment = augment
         self.imu_has_header = imu_has_header
 
         self.audio_samples = int(audio_sr * window_sec)
@@ -181,16 +185,16 @@ class BinaryMultimodalDataset(Dataset):
                                      self.audio_hop, self.audio_samples)
         # RMS normalization removes recording loudness as a shortcut feature.
         waveform = waveform / (waveform.pow(2).mean().sqrt() + 1e-8)
-        if self.is_train:
+        if self.is_train and self.augment:
             waveform = self._augment_waveform(waveform)
 
         mel = self.to_db(self.mel(waveform))  # [1, n_mels, T]
-        if self.is_train:
+        if self.is_train and self.augment:
             mel = self.time_mask(self.freq_mask(mel))
 
         imu = _read_imu_chunk(rec["csv_path"], rec["chunk_idx"],
                               self.imu_hop, self.imu_samples, self.imu_has_header)
-        if self.is_train:
+        if self.is_train and self.augment:
             imu = self._augment_imu(imu)
 
         return mel, imu, torch.tensor(rec["label"], dtype=torch.long)

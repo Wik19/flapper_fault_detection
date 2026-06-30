@@ -71,8 +71,8 @@ def build_folds(recordings, window_sec, hop_sec, healthy_split, healthy_hop=None
     return healthy_train, healthy_test, damaged
 
 
-def make_loader(records, is_train, window_sec, hop_sec, batch_size):
-    ds = BinaryMultimodalDataset(records, is_train=is_train,
+def make_loader(records, is_train, window_sec, hop_sec, batch_size, augment=True):
+    ds = BinaryMultimodalDataset(records, is_train=is_train, augment=augment,
                                  window_sec=window_sec, hop_sec=hop_sec)
     if is_train:
         # Balance the 2 classes per batch (damaged outnumbers healthy ~6:1).
@@ -123,7 +123,8 @@ def run(arch, args, folds):
             train_recs += records_for(d, range(d["total_chunks"]))
         test_recs = list(healthy_test) + records_for(held_out, range(held_out["total_chunks"]))
 
-        train_loader = make_loader(train_recs, True, args.window, args.hop, args.batch)
+        train_loader = make_loader(train_recs, True, args.window, args.hop, args.batch,
+                                   augment=not args.no_augment)
         test_loader = make_loader(test_recs, False, args.window, args.hop, args.batch)
 
         torch.manual_seed(0)
@@ -155,7 +156,8 @@ def fit_final_and_save(arch, args, folds):
     for d in damaged:
         all_recs += records_for(d, range(d["total_chunks"]))
 
-    loader = make_loader(all_recs, True, args.window, args.hop, args.batch)
+    loader = make_loader(all_recs, True, args.window, args.hop, args.batch,
+                         augment=not args.no_augment)
     torch.manual_seed(0)
     model = MODELS[arch]().to(device)
     train_one(model, loader, args.epochs, args.lr)
@@ -200,7 +202,8 @@ def write_markdown_report(results, args, md_path):
     L.append("# Binary Fault Detection — Cross-Validation Report\n")
     L.append(f"_Leave-one-damaged-recording-out CV · window {args.window}s · "
              f"damaged hop {args.hop}s · healthy train hop {args.healthy_hop}s · "
-             f"{args.epochs} epochs._\n")
+             f"{args.epochs} epochs · augmentation "
+             f"{'off' if args.no_augment else 'on'}._\n")
 
     if len(results) > 1:
         L.append("## Summary (mean across folds)\n")
@@ -267,6 +270,10 @@ def main():
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--no-augment", action="store_true",
+                        help="Disable ALL train-time augmentation (random gain, additive "
+                             "noise, time-shift, SpecAugment). Trains on the raw lab data; "
+                             "RMS/standardization preprocessing still applies.")
     args = parser.parse_args()
 
     print(f"Device: {device}")
@@ -276,6 +283,7 @@ def main():
     print(f"Recordings: 1 healthy (Healthy1) + {len(damaged)} damaged (tape excluded)")
     print(f"Healthy windows: {len(healthy_train)} train (hop {args.healthy_hop}s) / "
           f"{len(healthy_test)} test (hop {args.hop}s, guard-gapped)")
+    print(f"Augmentation: {'OFF (raw lab data)' if args.no_augment else 'ON'}")
 
     archs = ["audio", "late"] if args.arch == "both" else [args.arch]
     results = {}
