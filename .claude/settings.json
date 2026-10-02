@@ -3,6 +3,8 @@
     "deny": [
       "Read(./data/raw/**)",
       "Edit(./data/raw/**)",
+      "Read(./data/original/**)",
+      "Edit(./data/original/**)",
       "Edit(./legacy/**)"
     ]
   }
