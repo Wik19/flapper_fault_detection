@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./data/raw/**)",
+      "Edit(./data/raw/**)",
+      "Edit(./legacy/**)"
+    ]
+  }
+}
