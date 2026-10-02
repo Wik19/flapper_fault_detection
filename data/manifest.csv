@@ -1,0 +1,25 @@
+recording,label,damage,campaign,cropped,original_file,crop_start_s,crop_end_s,notes
+Healthy1,healthy,none,1,no,Healthy1,,,
+hole1_full,damaged,hole1,1,no,hole1_full,,,
+hole1_failure_cropped,damaged,hole1,1,yes,hole1_failure,2.5,11.0,failure removed
+hole1_loss_of_control_cropped,damaged,hole1,1,yes,hole1_loss_of_control,0.0,18.0,loss of control removed
+hole1_loss_of_control2_cropped,damaged,hole1,1,yes,hole1_loss_of_control2,0.0,6.0,loss of control removed
+hole2_full,damaged,hole2,1,no,hole2_full,,,
+hole2_full2,damaged,hole2,1,no,hole2_full2,,,
+tear_n_hole2_cropped,damaged,tear_n_hole2,1,yes,tear_n_hole2,0.0,32.0,disturbance removed
+tear_n_hole2_full_cropped,damaged,tear_n_hole2,1,yes,tear_n_hole2_full,1.5,57.0,disturbance removed
+fixed_all_tape,excluded,taped,1,no,fixed_all_tape,,,repaired wing; ambiguous label
+H1S1,healthy,none,2,yes,,,,original not yet verified
+H1S2,healthy,none,2,no,,,,original not yet verified
+H1S3,healthy,none,2,no,,,,original not yet verified
+H1S4,healthy,none,2,no,,,,original not yet verified
+H1S5,healthy,none,2,yes,,,,original not yet verified
+H1S6,healthy,none,2,no,,,,original not yet verified
+H1S7,healthy,none,2,no,,,,original not yet verified
+H1S8,healthy,none,2,yes,,,,original not yet verified
+H1S9,healthy,none,2,yes,,,,original not yet verified
+H1S10,healthy,none,2,yes,,,,originally named H2S10 (legacy edit_data.py); original not yet verified
+Hole1S1,damaged,hole1,2,no,,,,original not yet verified
+Hole1S2,damaged,hole1,2,no,,,,original not yet verified
+Hole2S1,damaged,hole2,2,no,,,,original not yet verified
+Hole2S2W12,damaged,hole2,2,no,,,,W12 in the name is a slip: two diagonal holes like Hole2S1
