@@ -64,7 +64,8 @@ def plot_sensor_data(wav_filepath, csv_filepath):
     plt.show()
 
 if __name__ == "__main__":
-    WAV_FILE = "Data/raw/MIC/tear_n_hole2_full.wav"
-    CSV_FILE = "Data/raw/IMU/tear_n_hole2_full.csv"
-    
+    file_name = "Hole1S1"
+    WAV_FILE = f"data/raw/MIC/{file_name}.wav"
+    CSV_FILE = f"data/raw/IMU/{file_name}.csv"
+
     plot_sensor_data(WAV_FILE, CSV_FILE)

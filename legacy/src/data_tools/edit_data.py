@@ -49,14 +49,15 @@ def crop_sensor_data(wav_in, csv_in, wav_out, csv_out, start_time_sec, end_time_
     print("Cropping complete!\n")
 
 if __name__ == "__main__":
-    WAV_FILE = "Data/raw/MIC/tear_n_hole2_full.wav"
-    CSV_FILE = "Data/raw/IMU/tear_n_hole2_full.csv"
+    file_name = "H2S10"
+    WAV_FILE = f"data/raw/MIC/{file_name}.wav"
+    CSV_FILE = f"data/raw/IMU/{file_name}.csv"
+
+    WAV_OUT = f"data/raw/MIC/H1S10.wav"
+    CSV_OUT = f"data/raw/IMU/H1S10.csv"
     
-    WAV_OUT = "Data/raw/MIC/tear_n_hole2_full_cropped.wav"
-    CSV_OUT = "Data/raw/IMU/tear_n_hole2_full_cropped.csv"
-    
-    START_SEC = 1.5
-    END_SEC = 57.0
+    START_SEC = 2
+    END_SEC = 40
     
     try:
         crop_sensor_data(WAV_FILE, CSV_FILE, WAV_OUT, CSV_OUT, START_SEC, END_SEC)

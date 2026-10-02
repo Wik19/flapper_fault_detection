@@ -8,6 +8,7 @@ Differences from the 5-class pipeline:
     training set is augmented to discourage memorizing recording-specific cues.
 """
 import os
+import re
 import glob
 import wave
 
@@ -23,25 +24,33 @@ CLASS_NAMES = {HEALTHY: "Healthy", DAMAGED: "Damaged"}
 
 
 DAMAGE_TOKENS = ("hole", "tear", "crack", "broken", "damage")
+# Healthy "session" naming, e.g. H1S1, H1S10, H2S3  ->  H<wing>S<session>.
+# Damaged recordings start with 'Hole'/'tear', so an 'h' followed immediately by
+# a digit unambiguously marks a healthy session code (never collides with 'hole').
+HEALTHY_SESSION_RE = re.compile(r"^h\d+s\d+", re.IGNORECASE)
 
 
 def binary_label(filename):
     """Map a recording's base name to a binary label, or None to exclude it.
 
     Case-insensitive and token-based so newly collected files just need a
-    recognisable word in the name: 'healthy' -> Healthy, any damage word
-    (hole/tear/crack/broken/damage) -> Damaged, 'tape' -> excluded.
+    recognisable pattern in the name:
+      * 'tape'                              -> excluded (repaired-but-modified)
+      * any damage word (hole/tear/...)     -> Damaged
+      * 'healthy' or an H<n>S<n> session id -> Healthy
+    Damage is checked before healthy so an explicit damage word always wins.
     """
     name = filename.lower()
     if "tape" in name:
         return None  # excluded: repaired-but-modified wing
-    if "healthy" in name:
-        return HEALTHY
     if any(token in name for token in DAMAGE_TOKENS):
         return DAMAGED
+    if "healthy" in name or HEALTHY_SESSION_RE.match(name):
+        return HEALTHY
     raise ValueError(
-        f"Could not map {filename!r} to a binary label. Put 'healthy' or a "
-        f"damage word ({', '.join(DAMAGE_TOKENS)}) in the filename.")
+        f"Could not map {filename!r} to a binary label. Use 'healthy' or an "
+        f"H<n>S<n> code for healthy, or a damage word "
+        f"({', '.join(DAMAGE_TOKENS)}) for damaged.")
 
 
 def _count_chunks(audio_path, samples_per_window, hop_samples):
@@ -93,8 +102,8 @@ def records_for(recording, chunk_indices):
 
 
 def _read_audio_chunk(audio_path, chunk_idx, hop_samples, samples_per_window):
-    # round() so a fractional chunk_idx (used to densify the single healthy
-    # recording with overlapping windows) maps to a valid integer sample offset.
+    # round() keeps a (possibly fractional) chunk_idx mapping to a valid integer
+    # sample offset; with integer indices it is a no-op.
     frame_offset = int(round(chunk_idx * hop_samples))
     with wave.open(audio_path, "rb") as wav_file:
         channels = wav_file.getnchannels()
