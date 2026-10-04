@@ -28,6 +28,15 @@ Damage was applied progressively to the same wing set, in this order:
   - Within a campaign, damage level is confounded with recording order (healthy flights always first).
   - Campaign 1 is 1 healthy / 8 damaged recordings, campaign 2 is 10 / 4: campaign and label are
     correlated, so results must also be checked within campaign 2 alone.
+- **Update (2026-10-04): recording order.** The originals' file timestamps give the order.
+  - Session 1: `Healthy1` → the four `hole1` flights → `hole2` → `tear_n_hole2` → `fixed_all_tape`.
+  - Session 2: `H1S1`–`H1S7` (healthy) → `Hole1S1`, `Hole1S2` → `Hole2S1`, `Hole2S2W12` →
+    `H2S8`, `H2S9`, `H2S10` (healthy, recorded about 7 minutes after the last damaged flight;
+    renamed `H1S8`–`H1S10` by the legacy crop script).
+  - **Open question:** holes can't be undone, so the `H2` flights must have used different wings.
+    Which ones? If they are a second fresh set, campaign 2 contains two wing sets, and these three
+    healthy flights come *after* the damaged ones. That weakens the order confound and gives a
+    small held-out-wing test.
 
 ## D4 — Data provenance (2026-10-03)
 - `data/raw/` holds the files the pipeline uses; `data/original/` holds the untouched recordings.
@@ -36,7 +45,10 @@ Damage was applied progressively to the same wing set, in this order:
   appears unchanged inside its original. Crop times were found by locating the exact sample run
   (audio) and the exact row block (IMU); the IMU row offset equalled start × 416 Hz in every case.
 - `original_file` and crop times in the manifest are filled **only when verified this way**.
-  Campaign 2 originals are pending.
+- **Campaign 2 verified (2026-10-04).** The 9 uncropped files are byte-identical to their
+  originals. The 5 crops were recovered the same way, and match the starts predicted from packet
+  IDs by sync check Q1. `H1S8`, `H1S9` and `H1S10` were renamed from `H2S8`, `H2S9` and `H2S10`
+  by the legacy crop script.
 
 ## D5 — Both sensor streams have hidden gaps (2026-10-04)
 - **Finding (firmware, `microcontroller-firmware/src/`).** Samples are dropped silently *before*
@@ -63,3 +75,30 @@ Damage was applied progressively to the same wing set, in this order:
 - **Decision.** Keep the firmware unchanged for now. Quantify the gaps per recording with the
   sync checks (Q2: steady drift vs steps after stalls; Q3: time-varying alignment). Redesign the
   firmware for future recordings only if the flaws turn out to be large.
+- **Update (2026-10-04).** Quantified in `docs/SYNC_CHECKS.md`: 0–7.3 s lost per recording; a
+  stall loses (its duration − ~1.25 s), exactly the queue model. The rate question is settled:
+  the losses are drops, and the IMU/microphone clocks agree to within ~0.15 s per minute.
+
+## D6 — Exclude windows that contain a hidden gap (PROPOSED 2026-10-04, confirm at windowing)
+- **Rule.** Drop every analysis window that contains the located gap (`drop_at_sample` from
+  `hidden_gaps`) of an event that lost more than **0.05 s**. For a burst of stalls (`n_stalls` >
+  1), whose earlier gaps are not located, drop every window overlapping the event (from
+  `stall_at_sample` to `drop_at_sample`).
+- **Why 0.05 s.** 21 samples, less than one wingbeat period (~70 ms at 14 Hz). A shorter gap
+  cannot glue together visibly different flight. 73 of the 111 events exceed it.
+- **Why "contains the gap" and not a blind zone after each stall.** The gap is located to ±48 ms
+  (Q2 step 6, validated against the queue model), so only windows that actually straddle it are
+  affected. Cost with 3-s windows and a 1-s hop: **21 %** of windows, against about 35 % for a
+  blind 3-s zone after each stall.
+- **Side effect.** The excluded share differs by campaign and label (15–30 %); excluding removes
+  gaps as a possible shortcut. Report the window counts per class after exclusion.
+
+## D7 — Re-align audio to the IMU before any audio or fusion model (PROPOSED 2026-10-04)
+- **Rule.** Shift the audio by the Q3 offset measured for that recording and time: linear
+  interpolation between window centres, held constant before the first and after the last window.
+  The IMU is the time reference because Q2 locates its gaps.
+- **Why.** Offsets reach ±1.4 s and change by up to 0.5 s within a recording, a large fraction
+  of a 3-s window (`docs/SYNC_CHECKS.md` §5–6).
+- **Exception.** The three recordings with an unreliable offset (`hole1_loss_of_control_cropped`,
+  `hole1_loss_of_control2_cropped`, `H1S9`) are left out of audio and fusion experiments.
+  IMU-only experiments keep them.
