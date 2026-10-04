@@ -79,7 +79,7 @@ Damage was applied progressively to the same wing set, in this order:
   stall loses (its duration − ~1.25 s), exactly the queue model. The rate question is settled:
   the losses are drops, and the IMU/microphone clocks agree to within ~0.15 s per minute.
 
-## D6 — Exclude windows that contain a hidden gap (PROPOSED 2026-10-04, confirm at windowing)
+## D6 — Exclude windows that contain a hidden gap (proposed 2026-10-04, confirmed 2026-10-05)
 - **Rule.** Drop every analysis window that contains the located gap (`drop_at_sample` from
   `hidden_gaps`) of an event that lost more than **0.05 s**. For a burst of stalls (`n_stalls` >
   1), whose earlier gaps are not located, drop every window overlapping the event (from
@@ -93,7 +93,7 @@ Damage was applied progressively to the same wing set, in this order:
 - **Side effect.** The excluded share differs by campaign and label (15–30 %); excluding removes
   gaps as a possible shortcut. Report the window counts per class after exclusion.
 
-## D7 — Re-align audio to the IMU before any audio or fusion model (PROPOSED 2026-10-04)
+## D7 — Re-align audio to the IMU before any audio or fusion model (proposed 2026-10-04, confirmed 2026-10-05)
 - **Rule.** Shift the audio by the Q3 offset measured for that recording and time: linear
   interpolation between window centres, held constant before the first and after the last window.
   The IMU is the time reference because Q2 locates its gaps.

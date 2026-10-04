@@ -258,9 +258,9 @@ of three stalls). Bottom: the Q3 offset for the same recording steps down at the
 
 1. **Hidden gaps must be handled before windowing.** A window containing a gap glues together
    moments up to several seconds apart. Gaps are unevenly spread across campaign and label (15–30
-   %), so a model could use them as a shortcut. Proposed handling: D6.
+   %), so a model could use them as a shortcut. Handling: D6 (confirmed).
 2. **Audio must be re-aligned before any fusion.** Offsets reach ±1.4 s, which is half of a 3-s
-   window, and drift within recordings. Proposed handling: D7.
+   window, and drift within recordings. Handling: D7 (confirmed).
 3. **Cropping shifted the alignment.** The legacy crop script cut audio and IMU at the same
    *nominal* second, but the two streams had lost different amounts of time before that point.
    This is why `H1S1` and `H1S8` start at about +0.9 s.
