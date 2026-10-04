@@ -9,17 +9,17 @@ hole2_full2,damaged,hole2,1,no,hole2_full2,,,
 tear_n_hole2_cropped,damaged,tear_n_hole2,1,yes,tear_n_hole2,0.0,32.0,disturbance removed
 tear_n_hole2_full_cropped,damaged,tear_n_hole2,1,yes,tear_n_hole2_full,1.5,57.0,disturbance removed
 fixed_all_tape,excluded,taped,1,no,fixed_all_tape,,,repaired wing; ambiguous label
-H1S1,healthy,none,2,yes,,,,original not yet verified
-H1S2,healthy,none,2,no,,,,original not yet verified
-H1S3,healthy,none,2,no,,,,original not yet verified
-H1S4,healthy,none,2,no,,,,original not yet verified
-H1S5,healthy,none,2,yes,,,,original not yet verified
-H1S6,healthy,none,2,no,,,,original not yet verified
-H1S7,healthy,none,2,no,,,,original not yet verified
-H1S8,healthy,none,2,yes,,,,original not yet verified
-H1S9,healthy,none,2,yes,,,,original not yet verified
-H1S10,healthy,none,2,yes,,,,originally named H2S10 (legacy edit_data.py); original not yet verified
-Hole1S1,damaged,hole1,2,no,,,,original not yet verified
-Hole1S2,damaged,hole1,2,no,,,,original not yet verified
-Hole2S1,damaged,hole2,2,no,,,,original not yet verified
-Hole2S2W12,damaged,hole2,2,no,,,,W12 in the name is a slip: two diagonal holes like Hole2S1
+H1S1,healthy,none,2,yes,H1S1,4.0,57.0,disturbance removed
+H1S2,healthy,none,2,no,H1S2,,,
+H1S3,healthy,none,2,no,H1S3,,,
+H1S4,healthy,none,2,no,H1S4,,,
+H1S5,healthy,none,2,yes,H1S5,0.0,20.0,disturbance removed
+H1S6,healthy,none,2,no,H1S6,,,
+H1S7,healthy,none,2,no,H1S7,,,
+H1S8,healthy,none,2,yes,H2S8,4.0,57.52,renamed from H2S8 by the legacy crop script; disturbance removed
+H1S9,healthy,none,2,yes,H2S9,0.0,13.0,renamed from H2S9 by the legacy crop script; disturbance removed
+H1S10,healthy,none,2,yes,H2S10,2.0,40.0,renamed from H2S10 by the legacy crop script; disturbance removed
+Hole1S1,damaged,hole1,2,no,Hole1S1,,,
+Hole1S2,damaged,hole1,2,no,Hole1S2,,,
+Hole2S1,damaged,hole2,2,no,Hole2S1,,,
+Hole2S2W12,damaged,hole2,2,no,Hole2S2W12,,,W12 in the name is a slip: two diagonal holes like Hole2S1
