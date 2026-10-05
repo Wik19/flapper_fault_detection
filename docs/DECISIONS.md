@@ -37,6 +37,11 @@ Damage was applied progressively to the same wing set, in this order:
     Which ones? If they are a second fresh set, campaign 2 contains two wing sets, and these three
     healthy flights come *after* the damaged ones. That weakens the order confound and gives a
     small held-out-wing test.
+- **Resolved (2026-10-05).** No record of that day survives. The user recalls only two wing sets
+  in total, so the most plausible explanation is that the holed wings were swapped for intact
+  ones before `H2S8`. **Rule:** a recording named `H…` is healthy; the manifest labels stand.
+  `H2S8`–`H2S10` are therefore healthy flights on the campaign-2 frame recorded after its damaged
+  flights. Revisit when new recordings are made.
 
 ## D4 — Data provenance (2026-10-03)
 - `data/raw/` holds the files the pipeline uses; `data/original/` holds the untouched recordings.
@@ -102,3 +107,25 @@ Damage was applied progressively to the same wing set, in this order:
 - **Exception.** The three recordings with an unreliable offset (`hole1_loss_of_control_cropped`,
   `hole1_loss_of_control2_cropped`, `H1S9`) are left out of audio and fusion experiments.
   IMU-only experiments keep them.
+
+## D8 — Model ladder: same classifier, increasingly free features (2026-10-05)
+- **Form.** Every model ends in the same classifier, p(damaged | window x) = σ(wᵀφ(x) + b). The
+  rungs differ only in who builds the feature map φ:
+
+  | Rung | φ chosen by | Trained weights |
+  |---|---|---|
+  | R0 | nothing: the campaign alone (the shortcut to beat) | 0 |
+  | R1 | physics: hand-designed features (to be designed next) | ~10–30 |
+  | R2 | chance: MiniRocket's fixed random filters (Dempster et al., KDD 2021) | ~10k, regularised |
+  | R3 | gradient descent: the legacy `BinaryLateFusionNet`, re-run unchanged | 45.5k |
+  | R4 | pre-training on general audio (e.g. PANNs), audio only, optional | ~100–2,000 |
+
+- **Order.** IMU first (R0 → R3), then audio, then fusion by averaging the two models'
+  probabilities (no extra weights; each sensor's contribution stays visible).
+- **Why.** The independent unit is the recording (n = 23). By Cover's theorem (1965), a linear
+  classifier on d features fits a share 2·Σₖ₌₀ᵈ C(n−1, k) / 2ⁿ of all labellings of n points
+  perfectly: for n = 23, 0.8 % at d = 5, 58 % at d = 11, 97 % at d = 15, all from d = 22. A
+  flexible model can therefore memorise flights; the ladder makes each added freedom earn its
+  place, measured within campaign 2.
+- **Rules.** All rungs use the same windows (D6), the same protocol and the same metrics. Every
+  rung is listed in the evaluation protocol before any is run, and every result is reported.
