@@ -5,3 +5,4 @@ models/
 results/
 __pycache__/
 .pytest_cache/
+literature/papers/
